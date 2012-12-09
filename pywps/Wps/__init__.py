@@ -150,8 +150,6 @@ http://wiki.rsg.pml.ac.uk/pywps/Introduction
         self.initProcesses(processes)
 
     def _initFromDirectory(self,dirname):
-
-        import sys
         processes = []
         # remove last "/" from the path
         if dirname[-1] == os.path.sep:
@@ -178,12 +176,12 @@ http://wiki.rsg.pml.ac.uk/pywps/Introduction
                 try:
                     procModule = __import__(procModule, globals(),\
                                     locals(), [processSources.__name__])
-                except Exception,e:
+                except Exception as e:
                     #async process has problems reporting missing modules.
                     traceback.print_exc(file=pywps.logFile)
                     logging.warning(
                             "Could not import processes from %s: %s" % \
-                                    (repr(processSources.__name__), repr(e)))
+                                    (repr(processSources.__name__), str(e)))
                 for member in dir(procModule):
                     member = eval("procModule."+member)
 
@@ -282,7 +280,7 @@ http://wiki.rsg.pml.ac.uk/pywps/Introduction
         """Clean possible temporary files etc. created by this request
         type
         
-        .. note:: this method is empty and should be redefined by particula
+        .. note:: this method is empty and should be redefined by particular
             instances
         """
         pass

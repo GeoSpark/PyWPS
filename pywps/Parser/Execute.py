@@ -28,7 +28,7 @@ import pywps
 from pywps.Parser.Post import Post as PostParser
 from pywps.Parser.Get import Get as GetParser
 
-import string,re,urllib
+import string,urllib
 
 class Post(PostParser):
     """ HTTP POST XML request encoding parser.  """
@@ -113,9 +113,9 @@ class Post(PostParser):
             raise pywps.InvalidParameterValue(
                 "Either responseDocument or rawDataOutput should be specified, but not both")
         if not self.inputs["responseform"].has_key("rawdataoutput"):
-               self.inputs["responseform"]["rawdataoutput"] = {}
+            self.inputs["responseform"]["rawdataoutput"] = {}
         if not self.inputs["responseform"].has_key("responsedocument"):
-               self.inputs["responseform"]["responsedocument"] = {}
+            self.inputs["responseform"]["responsedocument"] = {}
         return self.inputs
 
     def parseResponseForm(self,responseFormNode):
@@ -208,8 +208,8 @@ class Post(PostParser):
                 form["rawdataoutput"][identifier]["uom"] = \
                         responseFormNode.getAttributeNS(self.nameSpace,"uom")
             except IndexError:
-                 #raise pywps.MissingParameterValue("Identifier")
-                 pass
+                #raise pywps.MissingParameterValue("Identifier")
+                pass
         return form
 
     def parseDataInputs(self,inputsNode):
@@ -270,13 +270,13 @@ class Post(PostParser):
         # optional attributes
         #
 
-        # mimeType, encoding, schema - are now supportd supported ^_^ #jmdj
+        # mimeType, encoding, schema - are now supported ^_^ #jmdj
         
         attributes["mimetype"]=dataTypeNode.getAttribute("mimeType")
         attributes["encoding"]=dataTypeNode.getAttribute("encoding")
         attributes["schema"]=dataTypeNode.getAttribute("schema")
         
-       #jmdj GET method doesn't have a namespace
+        #jmdj GET method doesn't have a namespace
         attributes["method"] = dataTypeNode.getAttribute("method")
         if attributes["method"] == "":
             attributes["method"] = "GET"
@@ -547,6 +547,10 @@ class Get(GetParser):
 
         """
 
+        # Unquote the entire DataInputs parameter because JQuery quotes
+        # everything before sending it to the server, including equals and
+        # semicolon. - JD 9/12/12
+        dataInputs = urllib.unquote(dataInputs)
         parsedDataInputs = []
 
         # Parameters are separated by ";"
@@ -567,25 +571,25 @@ class Get(GetParser):
             attributes = []
             if valueAndAttrs.find("@") > 0:
                 encodedValue=valueAndAttrs.split("@")[0]
-                parsed["value"]=urllib.unquote(encodedValue)
+                parsed["value"] = encodedValue
                 attributes=valueAndAttrs.split("@")[1:]
                     
             elif valueAndAttrs.find("@") == 0:
                 #example: @xlink:href=http://rsg.pml.ac.uk/wps/testdata/elev_srtm_30m.img
                 if ("@xlink:href" in valueAndAttrs):
                     #This attribute is actually a value
-                    valueAndAttrs=valueAndAttrs.replace("@xlink:href=","")
-                    encodedValue=valueAndAttrs.split("@")[0]
-                    parsed["value"]=urllib.unquote(encodedValue)
-                    attributes=valueAndAttrs.split("@")[1:]
+                    valueAndAttrs = valueAndAttrs.replace("@xlink:href=","")
+                    encodedValue = valueAndAttrs.split("@")[0]
+                    parsed["value"] = encodedValue
+                    attributes = valueAndAttrs.split("@")[1:]
                 else:
-                    attributes=valueAndAttrs.split("@")[1:]
+                    attributes = valueAndAttrs.split("@")[1:]
                     #just passing the attributes
-                    parsed["value"]=None
+                    parsed["value"] = None
             else:
                 #needs to be checked for trueOrFalse
                 encodedValue=valueAndAttrs
-                parsed["value"]=self._trueOrFalse(urllib.unquote(valueAndAttrs))
+                parsed["value"] = self._trueOrFalse(valueAndAttrs)
                 attributes = []
            
             
@@ -595,13 +599,3 @@ class Get(GetParser):
                 parsed[attributeKey.lower()]=self._trueOrFalse(urllib.unquote(attributeValue))
             parsedDataInputs.append(parsed)
         return parsedDataInputs
-    
-    #Moved to Parser class
-    #def _trueOrFalse(self,str):
-    #    """Return True or False, if input is "true" or "false" """
-    #    if str.lower() == "false":
-    #        return False
-    #    elif str.lower() == "true":
-    #        return True
-    #    else:
-    #        return str

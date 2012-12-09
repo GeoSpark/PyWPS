@@ -29,10 +29,8 @@ Public License as published by the Free Software Foundation version 2 of the
 License.
 
 Enjoy and happy GISing!
-
-$Id: wps.py 871 2009-11-23 14:25:09Z jachym $
 """
-__version__ = "3.0-svn"
+__version__ = "3.0-fcgi"
 
 
 # Author:    Jachym Cepicky
@@ -55,49 +53,57 @@ __version__ = "3.0-svn"
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+import sys
+import traceback
+from flup.server.fcgi import WSGIServer
+from webob import Request, Response
+
 import pywps
-from pywps.Exceptions import *
+from pywps.Exceptions import WPSException, NoApplicableCode
 
-import sys,os,traceback
-
-
-# get the request method and inputs
-method = os.getenv("REQUEST_METHOD")
-if not method:  # set standard method
-    method = pywps.METHOD_GET
-
-inputQuery = None
-if method == pywps.METHOD_GET:
+def app(environ, start_response):
     try:
-        inputQuery = os.environ["QUERY_STRING"]     
-    except KeyError:
-        # if QUERY_STRING isn't found in env-dictionary, try to read
-        # query from command line:
-        if len(sys.argv)>1:  # any arguments available?
-            inputQuery = sys.argv[1]
-    if not inputQuery:
-        err =  NoApplicableCode("No query string found.")
-        pywps.response.response(err,sys.stdout)
-        sys.exit(1)
-else:
-    inputQuery = sys.stdin
+        request = Request(environ)
+        response = Response()
 
-# create the WPS object
-wps = None
-try:
-    wps = pywps.Pywps(method)
-    if wps.parseRequest(inputQuery):
-        pywps.debug(wps.inputs)
-        response = wps.performRequest()
-        # request performed, write the response back
-        if response:
-            # print only to standard out
-                pywps.response.response(wps.response,
-                    sys.stdout,wps.parser.soapVersion,wps.parser.isSoap,wps.parser.isSoapExecute, wps.request.contentType)
-                
-except WPSException,e:
-    traceback.print_exc(file=pywps.logFile)
-    pywps.response.response(e, sys.stdout, wps.parser.soapVersion,
-                            wps.parser.isSoap,
-                            wps.parser.isSoapExecute)
+        if len(request.body) == 0:
+            try:
+                request.body = sys.argv[1]
+            except:
+                response.status = 400 # Bad Request
+                response.headerlist = [('Content-Type', 'application/xml; charset=UTF-8'),]
+                response.body = str(NoApplicableCode('No query string found.'))
+                return response(environ, start_response)
+    
+        wps = pywps.Pywps(request.method)
 
+        if wps.parseRequest(request.body):
+#            pywps.debug(wps.inputs)
+            response_msg = wps.performRequest()
+            # request performed, write the response back
+            if response_msg:
+                response.status = 200 # OK
+                response.headerlist = [('Content-Type', wps.request.contentType),]
+                response.body = response_msg
+#                pywps.response.response(wps.response,
+#                    sys.stdout, wps.parser.soapVersion, wps.parser.isSoap,
+#                    wps.parser.isSoapExecute, wps.request.contentType)
+                    
+    except WPSException as e:
+        traceback.print_exc(file=pywps.logFile)
+        response.status = 400 # Bad Request
+        response.headerlist = [('Content-Type', 'application/xml; charset=UTF-8'),]
+        response.body = str(e)
+#        pywps.response.response(e, sys.stdout, wps.parser.soapVersion,
+#                                wps.parser.isSoap,
+#                                wps.parser.isSoapExecute)
+    except Exception as e:
+        traceback.print_exc(file=pywps.logFile)
+        response.status = 500 # Internal Server Error
+        response.headerlist = [('Content-Type', 'application/xml; charset=UTF-8'),]
+        response.body = str(NoApplicableCode(e.message))
+    
+    return response(environ, start_response)
+
+if __name__ == '__main__':
+    WSGIServer(app).run()

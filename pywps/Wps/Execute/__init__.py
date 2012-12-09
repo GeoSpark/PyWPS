@@ -324,12 +324,12 @@ class Execute(Request):
             raise pywps.InvalidParameterValue(
                 "status is true, but storeExecuteResponse is false")
       
-       #check storeExecuteResponse agains asReference=true
+        #check storeExecuteResponse agains asReference=true
         if not self.process.storeSupported and "outputs" in self.wps.inputs["responseform"]["responsedocument"]:
-           #check the array for asreference': True
-               if len([item for item in  self.wps.inputs["responseform"]["responsedocument"]["outputs"] if ("asreference" in item and item["asreference"]==True) ]):
-                   self.cleanEnv()
-                   raise pywps.InvalidParameterValue("storeExecuteResponse is false, but output(s) are requested as reference(s)")
+            #check the array for asreference': True
+            if len([item for item in  self.wps.inputs["responseform"]["responsedocument"]["outputs"] if ("asreference" in item and item["asreference"]==True) ]):
+                self.cleanEnv()
+                raise pywps.InvalidParameterValue("storeExecuteResponse is false, but output(s) are requested as reference(s)")
            
         
             
@@ -525,7 +525,7 @@ class Execute(Request):
                 if self.wps.inputs["datainputs"]:
                     for inp in self.wps.inputs["datainputs"]:
                         if unicode(inp["identifier"]) == unicode(identifier):
-                             #In complexValue trying to set the mimeType from user definition
+                            #In complexValue trying to set the mimeType from user definition
                             # --> cant be here
                             if input.type == "ComplexValue": 
                                 input.setMimeType(inp)
@@ -900,7 +900,7 @@ class Execute(Request):
 
     def _lineageComplexOutput(self, output, complexOutput):
         
-         #Checks for the correct output and logs 
+        #Checks for the correct output and logs 
         self.checkMimeTypeOutput(output)
         complexOutput["mimetype"] = output.format["mimetype"]
         complexOutput["encoding"] = output.format["encoding"]
@@ -971,7 +971,7 @@ class Execute(Request):
                 templateOutputs.append(templateOutput);
 
             except pywps.WPSException,e:
-               #In case we have a specific WPS exception e.g incorrect mimeType etc
+                #In case we have a specific WPS exception e.g incorrect mimeType etc
                 traceback.print_exc(file=pywps.logFile)
                 self.promoteStatus(self.failed,statusMessage=e.value,exceptioncode=e.code, locator=e.locator)
 
@@ -1009,8 +1009,12 @@ class Execute(Request):
             
         
         # set output value
-        complexOutput["complexdata"] = open(output.value,"r").read()
-
+        #complexOutput["complexdata"] = open(output.value,"r").read()
+        # pyWPS assumes that the output is stored in a file, but arguably it is
+        # preferable to just pass around strings - not least because it save littering
+        # the server with temporary files. - JD 9/12/12
+        complexOutput['complexdata'] = output.value
+        
         # remove <?xml version= ... part from beginning of some xml
         # documents
         #Better <?xml search due to problems with \n
@@ -1037,16 +1041,16 @@ class Execute(Request):
         return bboxOutput
 
     def _storeFileOnFTPServer(self, filePath, fileName, ftpURL, ftpPort,ftpLogin, ftpPasswd):
-        """The method sends a file located at filePath to a FTP server with url ftpURL using ftplogin and ftppasswd as authentification.
-            The vairiable fileName is the name of the file on the ftp server.
+        """The method sends a file located at filePath to a FTP server with url ftpURL using ftpLogin and ftpPasswd as authentication.
+            The variable fileName is the name of the file on the ftp server.
         """
        
         ftp =  pywps.Ftp.FTP(ftpURL, ftpPort)
         ftp.login(ftpLogin, ftpPasswd)
-        file = open(filePath, "r")
-        ftp.storbinary("STOR " + fileName, file)
+        file_in = open(filePath, "r")
+        ftp.storbinary("STOR " + fileName, file_in)
         ftp.quit()
-        file.close()
+        file_in.close()
 
 
     def _asReferenceOutput(self,templateOutput, output):
@@ -1367,7 +1371,7 @@ class Execute(Request):
         elif output.type == "ComplexValue":
 
             #self.checkMimeTypeIn(output)
-             # copy the file to safe place
+            # copy the file to safe place
             outName = os.path.basename(output.value)
             outSuffix = os.path.splitext(outName)[1]
             tmp = tempfile.mkstemp(suffix=outSuffix, prefix="%s-%s" % (output.identifier,self.pid),dir=os.path.join(config.getConfigValue("server","outputPath")))

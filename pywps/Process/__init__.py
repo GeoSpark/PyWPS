@@ -279,10 +279,10 @@ class WPSProcess:
                 statusSupported = False
         self.statusSupported = statusSupported
 
-	# status not supported on windows
-	if os.name == "nt":
-		self.statusSupported = False
-
+        # status not supported on windows
+        if os.name == "nt":
+            self.statusSupported = False
+    
         self.debug = False
 
         self.status = Status()
@@ -428,9 +428,9 @@ class WPSProcess:
         return self.inputs[identifier]
 
 
-    def addBBoxInput(self,identifier,title,abstract=None,
-                metadata=[],minOccurs=1,maxOccurs=1,
-                crss=["EPSG:4326"]):
+    def addBBoxInput(self, identifier, title, abstract=None,
+                metadata=[], minOccurs=1, maxOccurs=1,
+                crss=["EPSG:4326"], dimensions=2):
         """Add BoundingBox input
 
         :param identifier: input identifier
@@ -451,7 +451,8 @@ class WPSProcess:
         """
         self.inputs[identifier] = InAndOutputs.BoundingBoxInput(identifier,
                 title, abstract=abstract, metadata=metadata,
-                minOccurs=minOccurs, maxOccurs=maxOccurs, crss=crss)
+                minOccurs=minOccurs, maxOccurs=maxOccurs, crss=crss,
+                dimensions=dimensions)
 
         return self.inputs[identifier]
 
@@ -527,7 +528,7 @@ class WPSProcess:
         return self.outputs[identifier]
 
     def addBBoxOutput(self, identifier, title, abstract=None,
-            crs="EPSG:4326", dimensions=2,asReference=False):
+            crss=["EPSG:4326"], dimensions=2,asReference=False):
         """Add new output item of type BoundingBoxValue to this process
 
         :param identifier: input identifier
@@ -540,7 +541,7 @@ class WPSProcess:
         """
 
         self.outputs[identifier] = InAndOutputs.BoundingBoxOutput(identifier=identifier,
-                title=title, abstract=abstract, crss=[crs], dimensions=dimensions,asReference=asReference)
+                title=title, abstract=abstract, crss=crss, dimensions=dimensions,asReference=asReference)
 
         return self.outputs[identifier]
 
@@ -610,9 +611,9 @@ class WPSProcess:
         retcode = p.wait()
 
         if retcode != 0:
-           self.status.setProcessStatus("processFailed", True)
-           self.message("PyWPS stderr: %s\n" % (stderr),True)
-           raise Exception("PyWPS could not perform command [%s]:\n%s" % (cmd,stderr))
+            self.status.setProcessStatus("processFailed", True)
+            self.message("PyWPS stderr: %s\n" % (stderr),True)
+            raise Exception("PyWPS could not perform command [%s]:\n%s" % (cmd,stderr))
 
         return stdout
 

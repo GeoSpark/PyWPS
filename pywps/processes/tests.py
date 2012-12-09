@@ -119,19 +119,19 @@ class BBoxProcess3D(WPSProcess):
     def __init__(self):
         WPSProcess.__init__(self, identifier = "bboxprocess3D",title="BBox process",storeSupported=True, statusSupported=True)
 
-        self.bboxin = self.addBBoxInput(identifier="bboxin",title="BBox in",crs=['EPSG:5714'],dimensions=2)
-        self.bboxout = self.addBBoxOutput(identifier="bboxout",title="BBox out",crs=['EPSG:5714'],dimensions=2)
+        self.bboxin = self.addBBoxInput(identifier="bboxin", title="BBox in", crss=['EPSG:5714'], dimensions=2)
+        self.bboxout = self.addBBoxOutput(identifier="bboxout", title="BBox out", crss=['EPSG:5714'], dimensions=2)
 
     def execute(self):
         self.bboxout.setValue(self.bboxin.value.coords)
 
 
-class AssyncProcess(WPSProcess):
-    """This process runs in assynchronous way"""
+class AsyncProcess(WPSProcess):
+    """This process runs asynchronously"""
 
     def __init__(self):
         WPSProcess.__init__(self, identifier =
-                "assyncprocess",title="Assynchronous process",
+                "asyncprocess",title="Asynchronous process",
                 storeSupported=True, statusSupported=True)
     def execute(self):
         import time

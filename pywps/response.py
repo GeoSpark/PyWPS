@@ -10,16 +10,16 @@ future
 
 import types
 from sys import stdout as STDOUT
-from sys import stderr as STDERR
-import re, logging, cStringIO
+import logging, cStringIO
 from pywps import Exceptions
 from os import name as OSNAME
 from pywps import Soap 
 import pywps.Ftp
+import traceback
 
-
-
-def response(response,targets,soapVersion=None,isSoap=False,isSoapExecute=False,contentType="application/xml",isPromoteStatus=False):
+def response(response, targets, soapVersion=None, isSoap=False,
+             isSoapExecute=False, contentType="application/xml",
+             isPromoteStatus=False):
     """
     Print response to files given as input parameter.
 
@@ -37,41 +37,38 @@ def response(response,targets,soapVersion=None,isSoap=False,isSoapExecute=False,
         targets = [targets]
     if isSoap:
         soap = Soap.SOAP()
-        response = soap.getResponse(response,soapVersion,isSoapExecute,isPromoteStatus)
+        response = soap.getResponse(response, soapVersion,
+                                    isSoapExecute, isPromoteStatus)
 
     if isinstance(response,Exceptions.WPSException):
         response = response.__str__()
 
-
-
     # for each file in file descriptor
     for f in targets:
-
-        # consider, if this CGI, mod_python or Java requested output
+        # Determine if this is CGI, mod_python or Java requested output
         # mod_python here
         if repr(type(f)) == "<type 'mp_request'>":
-            _printResponseModPython(f,response,contentType)
+            _printResponseModPython(f, response, contentType)
 
         # file object (output, or sys.stdout)
         elif types.FileType == type(f):
-            _printResponseFile(f,response,contentType)
+            _printResponseFile(f, response, contentType)
 
         # pywps.Ftp.FTP object 
         elif isinstance(f, pywps.Ftp.FTP):
-             _sendResponseFTP(f,response)
-             logging.debug("Response document successfuly send to ftp server")
+            _sendResponseFTP(f, response)
+            logging.debug("Response document successfully sent to ftp server")
 
         # java servlet response
-        elif OSNAME == "java" :
-            _printResponseJava(f,response,contentType)
+        elif OSNAME == "java":
+            _printResponseJava(f, response, contentType)
 
         # close and open again, if it is a file
         if type(response) == types.FileType:
             response.close()
-            response = open(response.name,"rb")
+            response = open(response.name, "rb")
 
 def _printResponseModPython(request, response, contentType="application/xml"):
-
     if contentType:
         request.content_type = contentType
 
@@ -81,11 +78,10 @@ def _printResponseModPython(request, response, contentType="application/xml"):
         request.write(response)
 
 def _printResponseFile(fileOut, response, contentType="application/xml"):
-
     if fileOut == STDOUT and contentType:
-        print "Content-Type: %s\n" % contentType
+        print('Content-Type: {0}\n'.format(contentType))
     elif fileOut.closed:
-        fileOut = open(fileOut.name,"w")
+        fileOut = open(fileOut.name, "w")
 
     if type(response) == types.FileType:
         fileOut.write(response.read())
@@ -100,24 +96,26 @@ def _sendResponseFTP(ftpConnection, response):
     try:
         ftpConnection.connect()
         ftpConnection.relogin()
-        # In case the response is a file, we can send it directly
+
+        # If the response is a file we can send it directly.
         if type(response) == types.FileType:
-            ftpConnection.storbinary("STOR " + ftpConnection.fileName, response)
+            ftpConnection.storbinary("STOR " + ftpConnection.fileName,
+                                     response)
         else:
-            # We need a read-only memory file desciptor
+            # We need a read-only memory file descriptor.
             responseFile = cStringIO.StringIO(response)
-            # Send the file to the ftp server use the filename specified in the FTP object
-            ftpConnection.storbinary("STOR " + ftpConnection.fileName, responseFile)
+            # Send the file to the ftp server use the filename specified in the
+            # FTP object.
+            ftpConnection.storbinary("STOR " + ftpConnection.fileName,
+                                    responseFile)
             responseFile.close()
             
         ftpConnection.close()
-    except Exception, e:
+    except Exception as e:
         traceback.print_exc(file=pywps.logFile)
-        self.cleanEnv()
         raise pywps.NoApplicableCode("FTP error: " +  e.__str__())
 
-
-def _printResponseJava( resp, response,contentType="application/xml"):
+def _printResponseJava( resp, response, contentType="application/xml"):
     if contentType:
         resp.setContentType(contentType)
     toClient = resp.getWriter()

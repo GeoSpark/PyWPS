@@ -21,10 +21,10 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 from xml.dom.minidom import Document
-import pywps
+#import pywps
 from re import escape
-from pywps.Soap import SOAP
-import pywps.Soap
+#from pywps.Soap import SOAP
+#import pywps.Soap
 import sys
 
 called = 0
@@ -59,14 +59,16 @@ class WPSException(Exception):
 
     def getResponse(self):
         return self.document.toprettyxml(indent='\t', newl='\n', encoding="utf-8")
-        if pywps.Soap.soap == True:
-            soapCls = SOAP()
-            response = soapCls.getResponse(response)
+        # Not sure what this code is doing here - but we could do with SOAP
+        # handling at some point, so I'll leave it here. - JD 9/12/12
+#        if pywps.Soap.soap == True:
+#            soapCls = SOAP()
+#            response = soapCls.getResponse(response)
 
     def __str__(self):
         error = "PyWPS %s: Locator: %s; Value: %s\n" % (self.code, self.locator, self.value)
         try:
-            logFile.write(error)
+            logFile.write(error) #@UndefinedVariable
         except:
             sys.stderr.write(error)
 
@@ -96,7 +98,7 @@ class NoApplicableCode(WPSException):
         self.message = value
         if value:
             self.ExceptionText = self.document.createElement("ExceptionText")
-            self.ExceptionText.appendChild(self.document.createTextNode(repr(value)))
+            self.ExceptionText.appendChild(self.document.createTextNode(str(value)))
             self.Exception.appendChild(self.ExceptionText)
             self.value = escape(value)
 
@@ -108,7 +110,7 @@ class VersionNegotiationFailed(WPSException):
         self._make_xml()
         if value:
             self.ExceptionText = self.document.createElement("ExceptionText")
-            self.ExceptionText.appendChild(self.document.createTextNode(value))
+            self.ExceptionText.appendChild(self.document.createTextNode(str(value)))
             self.Exception.appendChild(self.ExceptionText)
             self.value = str(value)
 

@@ -256,7 +256,7 @@ class LiteralInput(Input):
         :param value: value to be controled
         """
         
-         # ugly characters, only if string
+        # ugly characters, only if string
         if  type(value)!= types.BooleanType:
             for char in self.restrictedCharacters:
                 if value.find(char) > -1:
@@ -283,10 +283,7 @@ class LiteralInput(Input):
         for allowed in self.values:
             if type(allowed) == types.ListType:
                 if allowed[0] <= value <= allowed[-1]:
-                    if self.spacing:
-                        if (value - allowed[0])%spacing == 0:
-                            return value
-                    else:
+                    if (value - allowed[0]) % self.spacing == 0:
                         return value
                     
             else:
@@ -426,7 +423,6 @@ class ComplexInput(Input):
         :param data: the data, which should be stored
         :type data: string
         """  
-        import tempfile
         from os import curdir, rename
 
         outputName = tempfile.mktemp(prefix="pywpsInput",dir=curdir)
@@ -444,24 +440,25 @@ class ComplexInput(Input):
         
         #self.format already set
         if  (self.format["mimetype"].lower().split("/")[0] != "text" and self.format["mimetype"].lower() != "application/xml"): 
-               # convert it to binary using base64
-               #Python problem: The file object has to be closed after base64.decode, so that ALL content is flushed, otherwise the binary files are corrupted
-               #This happens if the base64 has some 'trash' before and after the string. Better to use close() to be certain
-               rename(fout.name,fout.name+".base64")
-               try:
-                   f1=open(fout.name+".base64","r")
-                   f2=open(fout.name,"w")
-                   base64.decode(f1, f2)
-                   f1.close()
-                   f2.close()
-               except:
-                   self.onProblem("NoApplicableCode", "Could not convert text input to binary using base64 encoding.")
-               finally:  
-                    os.remove(fout.name+".base64")
-        #Checking what is actu
+            # convert it to binary using base64
+            #Python problem: The file object has to be closed after base64.decode, so that ALL content is flushed, otherwise the binary files are corrupted
+            #This happens if the base64 has some 'trash' before and after the string. Better to use close() to be certain
+            rename(fout.name,fout.name+".base64")
+            try:
+                f1=open(fout.name+".base64","r")
+                f2=open(fout.name,"w")
+                base64.decode(f1, f2)
+                f1.close()
+                f2.close()
+            except:
+                self.onProblem("NoApplicableCode", "Could not convert text input to binary using base64 encoding.")
+            finally:  
+                os.remove(fout.name+".base64")
+
         try:
-            mimeTypeMagic=self.ms.file(fileName).split(';')[0]
-            if self.format["mimetype"]!=mimeTypeMagic:
+            # Not sure where fileName is meant to be defined. - JD 9/12/12
+            mimeTypeMagic = self.ms.file(fileName).split(';')[0]
+            if self.format["mimetype"] != mimeTypeMagic:
                 logging.debug("ComplexDataInput defines mimeType %s (default set) but libMagic detects %s" % (str(self.format["mimetype"]),mimeTypeMagic))            
         except:
             pass
@@ -558,7 +555,7 @@ class ComplexInput(Input):
         :param fileName:
         :param mimeType:
         """
-         #Note: magic output something like: 'image/tiff; charset=binary' we only need the typeContent 
+        #Note: magic output something like: 'image/tiff; charset=binary' we only need the typeContent 
         if (self.format["mimetype"] is None) or (self.format["mimetype"]==""): 
             #No mimeType let's set it from default
             logging.debug("Missing ComplexDataInput mimeType in: %s, adopting default mimeType (first in formats list)" % self.identifier)
@@ -983,7 +980,6 @@ class ComplexOutput(Output):
         elif type(value) == types.FileType:
             self.value = value.name
         elif value.__class__.__name__=='StringIO' or value.__class__.__name__=='StringO': 
-            import tempfile
             from os import curdir
             stringIOName = tempfile.mkstemp(prefix="pywpsOutput",dir=curdir) #(5, '/tmp/pywps-instanceS2j6ve/pywpsOutputZxSM6V')
             stringIOName=stringIOName[1]

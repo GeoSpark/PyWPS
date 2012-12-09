@@ -85,7 +85,7 @@ __all__ = [ "Parser","processes", "Process", "Exceptions", "Wps", "Templates","T
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-import pywps
+#import pywps
 import config
 import response
 import Parser
@@ -225,22 +225,22 @@ class Pywps:
 
         # the modules are imported first, when the request type is known
         if inputs.has_key("request"):
-            if inputs["request"]  == "getcapabilities":
+            if inputs["request"] == "getcapabilities":
                 from pywps.Wps.GetCapabilities import GetCapabilities
                 self.request = GetCapabilities(self,processes=processes)
-            elif inputs["request"]  == "describeprocess":
+            elif inputs["request"] == "describeprocess":
                 from pywps.Wps.DescribeProcess import DescribeProcess
                 self.request = DescribeProcess(self,processes=processes)              
-            elif inputs["request"]  == "execute":
+            elif inputs["request"] == "execute":
                 from pywps.Wps.Execute import Execute
                 self.request = Execute(self,processes=processes)
         elif inputs.has_key("wsdl"):
-            inputs["version"]="1.0.0"
+            inputs["version"] = "1.0.0"
             from pywps.Wps.Wsdl import Wsdl
             self.request = Wsdl(self)
         else:
-            raise Exceptions.InvalidParameterValue(
-                    "request: "+inputs["request"])
+            raise Exceptions.InvalidParameterValue("request: {0}".format(inputs["request"]))
+        
         self.response = self.request.response
         return self.response
 
@@ -250,11 +250,11 @@ class Pywps:
         global logFile
         fileName = config.getConfigValue("server","logFile")
         logLevel = eval("logging."+config.getConfigValue("server","logLevel").upper())
-        format = "PyWPS [%(asctime)s] %(levelname)s: %(message)s"
+        fmt = "PyWPS [%(asctime)s] %(levelname)s: %(message)s"
         if not fileName:
-            logging.basicConfig(level=logLevel,format=format)
+            logging.basicConfig(level=logLevel,format=fmt)
         else:
-            logging.basicConfig(filename=fileName,level=logLevel,format=format)
+            logging.basicConfig(filename=fileName,level=logLevel,format=fmt)
             logFile = open(fileName, "a")
 
 
